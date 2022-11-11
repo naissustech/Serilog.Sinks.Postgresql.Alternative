@@ -1,6 +1,7 @@
 Change history
 --------------
 
+* **Version 4.0.0.0 (2022-11-11)** : Prevent logging except logs with LoggedManually property.
 * **Version 3.3.12.0 (2021-11-09)** : NuGet packages updated, added support for Net6.0.
 * **Version 3.3.11.0 (2021-10-28)** : Updated nuget packages, fixed bug where configuration from a JSON file was broken (https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/issues/31).
 * **Version 3.3.10.0 (2021-10-14)** : Updated nuget packages, added custom order for table columns.

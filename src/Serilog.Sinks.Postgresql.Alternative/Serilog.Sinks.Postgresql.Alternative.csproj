@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/naissustech/Serilog.Sinks.Postgresql.Alternative</RepositoryUrl>
     <PackageIcon>Icon.png</PackageIcon>
     <RepositoryType>Github</RepositoryType>
-    <PackageReleaseNotes>Version 3.3.12.0 (2021-11-09): NuGet packages updated, added support for Net6.0.</PackageReleaseNotes>
+    <PackageReleaseNotes>Version 4.0.0.0 (2022-11-11): Prevent logging except logs with LoggedManually property.</PackageReleaseNotes>
     <PackageLicenseFile>License.txt</PackageLicenseFile>
     <LangVersion>latest</LangVersion>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
