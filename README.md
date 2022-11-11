@@ -1,7 +1,7 @@
 Serilog.Sinks.Postgresql.Alternative
 ====================================
 
-Serilog.Sinks.Postgresql.Alternative is a library to save logging information from [Serilog](https://github.com/serilog/serilog) to [PostgreSQL](https://www.postgresql.org/).
+Serilog.Sinks.Postgresql.Alternative.Naissus is a library to save logging information from [Serilog](https://github.com/serilog/serilog) to [PostgreSQL](https://www.postgresql.org/) to log only specific logs adapted for Naissus Technologies.
 
 [![GitHub issues](https://img.shields.io/github/issues/serilog-contrib/Serilog.Sinks.Postgresql.Alternative.svg)](https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/issues)
 [![GitHub forks](https://img.shields.io/github/forks/serilog-contrib/Serilog.Sinks.Postgresql.Alternative.svg)](https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/network)
@@ -37,17 +37,17 @@ Check out the how to use file [here](https://github.com/serilog-contrib/Serilog.
 ## Install
 
 ```bash
-dotnet add package Serilog.Sinks.Postgresql.Alternative
+dotnet add package Serilog.Sinks.Postgresql.Alternative.Naissus
 ```
 
 ## Further information
-This project is a fork of https://github.com/b00ted/serilog-sinks-postgresql but is maintained.
-Do not hesitate to create [issues](https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/issues) or [pull requests](https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/pulls).
+This project is a fork of https://github.com/b00ted/serilog-sinks-postgresql but is changed and adopted to work for Naissus Technologies.
+Do not hesitate to create [issues](https://github.com/naissustech/Serilog.Sinks.Postgresql.Alternative/issues) or [pull requests](https://github.com/naissustech/Serilog.Sinks.Postgresql.Alternative/pulls).
 
 Change history
 --------------
 
-See the [Changelog](https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/blob/master/Changelog.md).
+See the [Changelog](https://github.com/naissustech/Serilog.Sinks.Postgresql.Alternative/blob/master/Changelog.md).
 
 ## Contributors ✨
 
