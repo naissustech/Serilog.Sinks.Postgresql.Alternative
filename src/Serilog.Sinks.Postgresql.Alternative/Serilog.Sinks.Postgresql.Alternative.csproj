@@ -9,7 +9,7 @@
     <PackageId>Serilog.Sinks.Postgresql.Alternative.Naissus</PackageId>
     <Authors>Naissus Tech, SeppPenner and the Serilog contributors</Authors>
     <Company>Naissus Tech, SeppPenner and the Serilog contributors</Company>
-    <Copyright>Copyright © SeppPenner and the Serilog contributors</Copyright>
+    <Copyright>Copyright © Naissus Tech, SeppPenner and the Serilog contributors</Copyright>
     <Description>Serilog.Sinks.Postgresql.Alternative.Naissus is a library to save logging information from https://github.com/serilog/serilog to https://www.postgresql.org/ and adapted to allow nested properties logging.</Description>
     <PackageTags>c# csharp serilog postgresql postgres sink logging log naissus</PackageTags>
     <PackageProjectUrl>https://www.nuget.org/packages/Serilog.Sinks.Postgresql.Alternative/</PackageProjectUrl>
@@ -24,6 +24,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>4.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

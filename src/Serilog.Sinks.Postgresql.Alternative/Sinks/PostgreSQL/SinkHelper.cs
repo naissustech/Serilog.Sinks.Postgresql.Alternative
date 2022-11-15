@@ -8,6 +8,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using NpgsqlTypes;
 using Serilog.Parsing;
 
 namespace Serilog.Sinks.PostgreSQL
@@ -138,9 +139,9 @@ namespace Serilog.Sinks.PostgreSQL
 
                 var automaticLogs = eventsWithSameSpanId.Where(x => !x.Properties.ContainsKey("LoggedManually")).ToList();
 
-                Guid? accountUid = null;
-                Guid? clientUid = null;
-                Guid? whitelabelUid = null;
+                string accountUid = null;
+                string clientUid = null;
+                string whitelabelUid = null;
                 LogEventPropertyValue userUid = null;
                 //LogEventPropertyValue request = null;
                 string commandNameString = null;
@@ -197,15 +198,11 @@ namespace Serilog.Sinks.PostgreSQL
                                 continue;
                             }
 
-                            var scalarAccountUid = (ScalarValue)accountIdentifierProperties.FirstOrDefault(x => x.Name == "AccountUid")?.Value;
-                            accountUid = (Guid?)scalarAccountUid?.Value;
+                            accountUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "AccountUid")?.Value.ToString();
 
-                            var scalarClientUid = (ScalarValue)accountIdentifierProperties.FirstOrDefault(x => x.Name == "ClientUid")?.Value;
-                            clientUid = (Guid?)scalarClientUid?.Value;
+                            clientUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "ClientUid")?.Value.ToString();
 
-                            var scalarWhitelabelUid =
-                                (ScalarValue)accountIdentifierProperties.FirstOrDefault(x => x.Name == "WhitelabelCompanyUid")?.Value;
-                            whitelabelUid = (Guid?)scalarWhitelabelUid?.Value;
+                            whitelabelUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "WhitelabelCompanyUid")?.Value.ToString();
                             break;
                         case DictionaryValue dictionary:
                             break;
@@ -242,7 +239,6 @@ namespace Serilog.Sinks.PostgreSQL
 
                 if (!string.IsNullOrEmpty(commandNameString))
                 {
-                    commandNameString = commandNameString.Replace("\"", "");
                     newProperties.Add(new LogEventProperty("Name", new ScalarValue(commandNameString)));
                     newProperties.Add(new LogEventProperty("CommandName", new ScalarValue(commandNameString)));
                 }
@@ -257,7 +253,7 @@ namespace Serilog.Sinks.PostgreSQL
                     newProperties.Add(new LogEventProperty("ActionId", actionId));
                 }
 
-                if (whitelabelUid.HasValue)
+                if (!string.IsNullOrEmpty(whitelabelUid))
                 {
                     newProperties.Add(new LogEventProperty("WhitelabelUid", new ScalarValue(whitelabelUid)));
                 }
@@ -268,20 +264,22 @@ namespace Serilog.Sinks.PostgreSQL
 
                     whitelabelUidProp ??= manualLogs.Find(x => x.Properties.ContainsKey("WhitelabelUid"))?.Properties.First(p => p.Key == "WhitelabelUid").Value;
 
-                    if (whitelabelUidProp != null)
+                    whitelabelUid = whitelabelUidProp?.ToString();
+
+                    if (!string.IsNullOrEmpty(whitelabelUid))
                     {
-                        newProperties.Add(new LogEventProperty("WhitelabelUid", whitelabelUidProp));
+                        newProperties.Add(new LogEventProperty("WhitelabelUid", new ScalarValue(whitelabelUid)));
                     }
                 }
 
-                if (clientUid.HasValue)
+                if (!string.IsNullOrEmpty(clientUid))
                 {
-                    newProperties.Add(new LogEventProperty("ClientUid", new ScalarValue(clientUid.Value)));
+                    newProperties.Add(new LogEventProperty("ClientUid", new ScalarValue(clientUid)));
                 }
 
-                if (accountUid.HasValue)
+                if (!string.IsNullOrEmpty(accountUid))
                 {
-                    newProperties.Add(new LogEventProperty("AccountUid", new ScalarValue(accountUid.Value)));
+                    newProperties.Add(new LogEventProperty("AccountUid", new ScalarValue(accountUid)));
                 }
 
                 if (userUid != null)
@@ -428,9 +426,18 @@ namespace Serilog.Sinks.PostgreSQL
 
                 foreach (var columnKey in this.ColumnNamesWithoutSkipped())
                 {
-                    writer.Write(
-                        this.SinkOptions.ColumnOptions[columnKey].GetValue(entity, this.SinkOptions.FormatProvider),
-                        this.SinkOptions.ColumnOptions[columnKey].DbType);
+                    var value = this.SinkOptions.ColumnOptions[columnKey].GetValue(entity, this.SinkOptions.FormatProvider);
+                    var dbType = this.SinkOptions.ColumnOptions[columnKey].DbType;
+
+                    if (dbType == NpgsqlDbType.Text && value is string stringValue)
+                    {
+                        if (stringValue.StartsWith("\"") && stringValue.EndsWith("\"") && stringValue.Length > 1)
+                        {
+                            value = stringValue.Substring(1, stringValue.Length - 2);
+                        }
+                    }
+
+                    writer.Write(value, dbType);
                 }
             }
         }
