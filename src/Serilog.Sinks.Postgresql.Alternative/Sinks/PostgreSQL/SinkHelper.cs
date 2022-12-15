@@ -127,14 +127,26 @@ namespace Serilog.Sinks.PostgreSQL
 
             foreach (var spanId in differentSpanIds)
             {
+                var automaticLogsError = false;
+
                 var eventsWithSameSpanId = events
                     .Where(x => x.Properties.Any(p => p.Key == "SpanId" && p.Value.ToString() == spanId))
                     .ToList();
 
                 if (!eventsWithSameSpanId.Any(x => x.Properties.ContainsKey("LoggedManually")))
                 {
-                    newLogs.AddRange(eventsWithSameSpanId.FindAll(x => x.Level >= LogEventLevel.Error));
-                    continue;
+                    var errorLogs = eventsWithSameSpanId.FindAll(x => x.Level >= LogEventLevel.Error);
+                    if (errorLogs.Any())
+                    {
+                        automaticLogsError = true;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    //newLogs.AddRange(eventsWithSameSpanId.FindAll(x => x.Level >= LogEventLevel.Error));
+                    //continue;
                 }
 
                 var automaticLogs = eventsWithSameSpanId.Where(x => !x.Properties.ContainsKey("LoggedManually")).ToList();
@@ -149,15 +161,27 @@ namespace Serilog.Sinks.PostgreSQL
                 LogEventLevel level = eventsWithSameSpanId.Max(x => x.Level);
                 DateTimeOffset timestamp = eventsWithSameSpanId.First().Timestamp;
                 Exception exception = null;
+                string additionalMessage = null;
+
+                var isError = level >= LogEventLevel.Error;
 
                 userUid = automaticLogs.Find(x => x.Properties.ContainsKey("UserId"))?.Properties.First(p => p.Key == "UserId").Value;
 
                 requestPath = automaticLogs.Find(x => x.Properties.ContainsKey("RequestPath"))?.Properties.First(p => p.Key == "RequestPath").Value;
 
                 commandNameString = automaticLogs.SelectMany(x => x.Properties.Where(p => p.Key == "Name" && p.Value != null).Select(y => y.Value))
-                    .Select(x => x?.ToString().Replace("\"", string.Empty)).FirstOrDefault(x => !string.IsNullOrEmpty(x) && x != "EventCommand");
+                    .Select(x => x?.ToString().Replace("\"", string.Empty))
+                    .FirstOrDefault(x => !string.IsNullOrEmpty(x) && x != "EventCommand");
 
-                if (level >= LogEventLevel.Error)
+                if (string.IsNullOrEmpty(commandNameString))
+                {
+                    commandNameString = eventsWithSameSpanId
+                        .SelectMany(x => x.Properties.Where(p => p.Key == "Name" && p.Value != null).Select(y => y.Value))
+                        .Select(x => x?.ToString().Replace("\"", string.Empty))
+                        .FirstOrDefault(x => !string.IsNullOrEmpty(x) && x != "EventCommand");
+                }
+
+                if (isError)
                 {
                     exception = eventsWithSameSpanId
                         .Where(x => x.Level >= LogEventLevel.Error)
@@ -166,57 +190,63 @@ namespace Serilog.Sinks.PostgreSQL
                         .First().Exception;
                 }
 
-                foreach (var automaticLog in automaticLogs)
-                {
-                    if (!automaticLog.Properties.ContainsKey("Request"))
-                    {
-                        continue;
-                    }
+                var requestProperties = new Dictionary<string, string>();
 
-                    var logEventPropertyValue = automaticLog.Properties["Request"];
-                    if (logEventPropertyValue == null)
-                    {
-                        continue;
-                    }
-
-                    //request ??= logEventPropertyValue;
-
-                    switch (logEventPropertyValue)
-                    {
-                        case ScalarValue scalar:
-                            break;
-                        case SequenceValue sequence:
-                            break;
-                        case StructureValue structure:
-                            var structureProperties = structure.Properties;
-
-                            var accountIdentifierProperties =
-                                ((StructureValue)structureProperties.FirstOrDefault(x => x.Name == "AccountIdentifier")?.Value)?.Properties;
-
-                            if (accountIdentifierProperties == null)
-                            {
-                                continue;
-                            }
-
-                            accountUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "AccountUid")?.Value.ToString();
-
-                            clientUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "ClientUid")?.Value.ToString();
-
-                            whitelabelUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "WhitelabelCompanyUid")?.Value.ToString();
-                            break;
-                        case DictionaryValue dictionary:
-                            break;
-                    }
-                }
+                FillProperties(automaticLogs, automaticLogsError, isError, ref requestProperties, ref accountUid, ref clientUid, ref whitelabelUid);
 
                 var manualLogs = eventsWithSameSpanId.Where(x => x.Properties.ContainsKey("LoggedManually")).ToList();
 
-                List<MessageTemplateToken> manualLogTokens = new List<MessageTemplateToken>();
-
-                foreach (var manualLog in manualLogs)
+                if (!requestProperties.Any())
                 {
-                    manualLogTokens.AddRange(manualLog.MessageTemplate.Tokens);
+                    FillProperties(manualLogs, automaticLogsError, isError, ref requestProperties, ref accountUid, ref clientUid, ref whitelabelUid);
+                }
+
+                var manualLogTokens = new List<MessageTemplateToken>();
+
+                //var namedProperties = new Dictionary<string, string>();
+
+                var tempLogs = manualLogs.Any() ? manualLogs : automaticLogs;
+                foreach (var log in tempLogs)
+                {
+                    var properties = log.Properties;
+                    foreach (var messageTemplateToken in log.MessageTemplate.Tokens)
+                    {
+                        if (messageTemplateToken is PropertyToken propertyToken)
+                        {
+                            if (properties.TryGetValue(propertyToken.PropertyName, out var propertyValue))
+                            {
+                                //namedProperties[propertyToken.PropertyName] = propertyValue.ToString();
+                                manualLogTokens.Add(new TextToken(propertyValue.ToString()));
+                            }
+                        }
+                        else if (messageTemplateToken is TextToken)
+                        {
+                            manualLogTokens.Add(messageTemplateToken);
+                        }
+                    }
+                    
                     manualLogTokens.Add(new TextToken(Environment.NewLine));
+                }
+
+                if (automaticLogsError || isError)
+                {
+                    if (requestProperties.Any())
+                    {
+                        var errorTokens = automaticLogs.Where(x => x.Level >= LogEventLevel.Error).SelectMany(x => x.MessageTemplate.Tokens);
+
+                        manualLogTokens.AddRange(errorTokens);
+                        manualLogTokens.Add(new TextToken(Environment.NewLine));
+
+                        manualLogTokens.Add(new TextToken("Request:"));
+                        manualLogTokens.Add(new TextToken(Environment.NewLine));
+
+                        foreach (var requestProperty in requestProperties)
+                        {
+                            manualLogTokens.Add(new TextToken($"\t{requestProperty.Key}: "));
+                            manualLogTokens.Add(new PropertyToken(requestProperty.Key, requestProperty.Value));
+                            manualLogTokens.Add(new TextToken(Environment.NewLine));
+                        }
+                    }
                 }
 
                 var newMessageTemplate = new MessageTemplate(manualLogTokens);
@@ -229,7 +259,36 @@ namespace Serilog.Sinks.PostgreSQL
                     manualLogs.Find(x => x.Properties.ContainsKey("ActionId"))?.Properties.First(p => p.Key == "ActionId").Value;
 
                 var spanIdProp =
-                    manualLogs.Find(x => x.Properties.ContainsKey("SpanId")).Properties.First(p => p.Key == "SpanId").Value;
+                    eventsWithSameSpanId.Find(x => x.Properties.ContainsKey("SpanId")).Properties.First(p => p.Key == "SpanId").Value;
+
+                if (level == LogEventLevel.Warning)
+                {
+                    var warnings = eventsWithSameSpanId.Where(x => x.Level == LogEventLevel.Warning).ToList();
+                    var additionalMessageBuilder = new StringBuilder();
+
+                    foreach (var log in warnings)
+                    {
+                        var properties = log.Properties;
+                        foreach (var messageTemplateToken in log.MessageTemplate.Tokens)
+                        {
+                            if (messageTemplateToken is PropertyToken propertyToken)
+                            {
+                                if (properties.TryGetValue(propertyToken.PropertyName, out var propertyValue))
+                                {
+                                    additionalMessageBuilder.Append(propertyValue);
+                                }
+                            }
+                            else if (messageTemplateToken is TextToken)
+                            {
+                                additionalMessageBuilder.Append(messageTemplateToken);
+                            }
+                        }
+
+                        additionalMessageBuilder.Append(Environment.NewLine);
+                    }
+
+                    additionalMessage = additionalMessageBuilder.ToString();
+                }
 
                 var newProperties = new List<LogEventProperty>
                 {
@@ -266,6 +325,11 @@ namespace Serilog.Sinks.PostgreSQL
 
                     whitelabelUid = whitelabelUidProp?.ToString();
 
+                    if (string.IsNullOrEmpty(whitelabelUid))
+                    {
+                        requestProperties.TryGetValue("TennantUid", out whitelabelUid);
+                    }
+
                     if (!string.IsNullOrEmpty(whitelabelUid))
                     {
                         newProperties.Add(new LogEventProperty("WhitelabelUid", new ScalarValue(whitelabelUid)));
@@ -276,15 +340,36 @@ namespace Serilog.Sinks.PostgreSQL
                 {
                     newProperties.Add(new LogEventProperty("ClientUid", new ScalarValue(clientUid)));
                 }
+                else
+                {
+                    if (requestProperties.TryGetValue("ClientUid", out clientUid))
+                    {
+                        newProperties.Add(new LogEventProperty("ClientUid", new ScalarValue(clientUid)));
+                    }
+                }
 
                 if (!string.IsNullOrEmpty(accountUid))
                 {
                     newProperties.Add(new LogEventProperty("AccountUid", new ScalarValue(accountUid)));
                 }
+                else
+                {
+                    if (requestProperties.TryGetValue("AccountUid", out accountUid))
+                    {
+                        newProperties.Add(new LogEventProperty("AccountUid", new ScalarValue(accountUid)));
+                    }
+                }
 
                 if (userUid != null)
                 {
                     newProperties.Add(new LogEventProperty("UserId", userUid));
+                }
+                else
+                {
+                    if (requestProperties.TryGetValue("UserId", out var userUidString))
+                    {
+                        newProperties.Add(new LogEventProperty("UserId", new ScalarValue(userUidString)));
+                    }
                 }
 
                 //if (request != null)
@@ -297,12 +382,77 @@ namespace Serilog.Sinks.PostgreSQL
                     newProperties.Add(new LogEventProperty("RequestPath", requestPath));
                 }
 
+                if (!string.IsNullOrEmpty(additionalMessage))
+                {
+                    newProperties.Add(new LogEventProperty("AdditionalMessage", new ScalarValue(additionalMessage)));
+                }
+
                 var newLog = new LogEvent(timestamp, level, exception, newMessageTemplate, newProperties);
 
                 newLogs.Add(newLog);
             }
 
             return newLogs;
+        }
+
+        private void FillProperties(List<LogEvent> logs,
+            bool automaticLogsError,
+            bool isError,
+            ref Dictionary<string, string> requestProperties,
+            ref string accountUid,
+            ref string clientUid,
+            ref string whitelabelUid)
+        {
+            foreach (var automaticLog in logs)
+            {
+                if (!automaticLog.Properties.ContainsKey("Request"))
+                {
+                    continue;
+                }
+
+                var logEventPropertyValue = automaticLog.Properties["Request"];
+                if (logEventPropertyValue == null)
+                {
+                    continue;
+                }
+
+                //request ??= logEventPropertyValue;
+
+                switch (logEventPropertyValue)
+                {
+                    case ScalarValue scalar:
+                        break;
+                    case SequenceValue sequence:
+                        break;
+                    case StructureValue structure:
+                        var structureProperties = structure.Properties;
+
+                        var accountIdentifierProperties =
+                            ((StructureValue) structureProperties.FirstOrDefault(x => x.Name == "AccountIdentifier")?.Value)?.Properties;
+
+                        if (automaticLogsError || isError)
+                        {
+                            foreach (var structureProperty in structureProperties)
+                            {
+                                requestProperties[structureProperty.Name] = structureProperty.PropertyToString();
+                            }
+                        }
+
+                        if (accountIdentifierProperties == null || automaticLog.Properties.ContainsKey("LoggedManually"))
+                        {
+                            continue;
+                        }
+
+                        accountUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "AccountUid")?.Value.ToString();
+
+                        clientUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "ClientUid")?.Value.ToString();
+
+                        whitelabelUid = accountIdentifierProperties.FirstOrDefault(x => x.Name == "WhitelabelCompanyUid")?.Value.ToString();
+                        break;
+                    case DictionaryValue dictionary:
+                        break;
+                }
+            }
         }
 
         /// <summary>
