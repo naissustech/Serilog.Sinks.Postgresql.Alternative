@@ -428,7 +428,7 @@ namespace Serilog.Sinks.PostgreSQL
                         var structureProperties = structure.Properties;
 
                         var accountIdentifierProperties =
-                            ((StructureValue) structureProperties.FirstOrDefault(x => x.Name == "AccountIdentifier")?.Value)?.Properties;
+                            ((StructureValue)structureProperties.FirstOrDefault(x => x.Name == "AccountIdentifier")?.Value)?.Properties;
 
                         if (automaticLogsError || isError)
                         {
