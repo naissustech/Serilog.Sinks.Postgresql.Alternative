@@ -268,6 +268,204 @@ public static class LoggerConfigurationPostgreSqlExtensions
     }
 
     /// <summary>
+    /// Adds a sink which writes to the PostgreSQL table. The configuration for the sink can be taken from the JSON file.
+    /// </summary>
+    /// <param name="sinkConfiguration">The logger configuration.</param>
+    /// <param name="connectionString">The connection string to the database where to store the events.</param>
+    /// <param name="tableName">Name of the table to store the events in.</param>
+    /// <param name="loggerColumnOptions">The logger column options.</param>
+    /// <param name="loggerPropertyColumnOptions">The logger property column options.</param>
+    /// <param name="nestedPropertyColumnOptions">The logger custom column options.</param>
+    /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
+    /// <param name="period">The time to wait between checking for event batches.</param>
+    /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+    /// <param name="batchSizeLimit">The maximum number of events to include to single batch.</param>
+    /// <param name="queueLimit">The maximum number of events that should be stored in the batching queue.</param>
+    /// <param name="levelSwitch">A switch allowing the pass-through minimum level to be changed at runtime.</param>
+    /// <param name="useCopy">If true inserts data via COPY command, otherwise uses INSERT INTO statement.</param>
+    /// <param name="schemaName">The schema name.</param>
+    /// <param name="needAutoCreateTable">A <seealso cref="bool"/> value indicating whether the table should be auto created or not.</param>
+    /// <param name="needAutoCreateSchema">Specifies whether the schema should be auto-created if it does not already exist or not.</param>
+    /// <param name="failureCallback">The failure callback.</param>
+    /// <param name="appConfiguration">The app configuration section. Required if the connection string is a name.</param>
+    /// <returns>Logger configuration, allowing configuration to continue.</returns>
+    // ReSharper disable once InconsistentNaming
+    public static LoggerConfiguration PostgreSQL(
+        this LoggerSinkConfiguration sinkConfiguration,
+        string connectionString,
+        string tableName,
+        IDictionary<string, string>? loggerColumnOptions = null,
+        IDictionary<string, SinglePropertyColumnWriter>? loggerPropertyColumnOptions = null,
+        IDictionary<string, NestedPropertyColumnWriter>? nestedPropertyColumnOptions = null,
+        LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
+        TimeSpan? period = null,
+        IFormatProvider? formatProvider = null,
+        int batchSizeLimit = DefaultBatchSizeLimit,
+        int queueLimit = DefaultQueueLimit,
+        LoggingLevelSwitch? levelSwitch = null,
+        bool useCopy = true,
+        string schemaName = "",
+        bool needAutoCreateTable = false,
+        bool needAutoCreateSchema = false,
+        Action<Exception>? failureCallback = null,
+        IConfiguration? appConfiguration = null)
+    {
+        if (sinkConfiguration == null)
+        {
+            throw new ArgumentNullException(nameof(sinkConfiguration));
+        }
+
+        if (appConfiguration != null)
+        {
+            connectionString =
+                MicrosoftExtensionsConnectionStringProvider.GetConnectionString(connectionString, appConfiguration);
+        }
+
+        period ??= DefaultPeriod;
+
+        IDictionary<string, ColumnWriterBase>? columns = null;
+
+        if (loggerColumnOptions != null)
+        {
+            columns = new Dictionary<string, ColumnWriterBase>();
+
+            foreach (var columnOption in loggerColumnOptions)
+            {
+                switch (columnOption.Value)
+                {
+                    case "Level":
+                        columns.Add(columnOption.Key, new LevelColumnWriter());
+                        break;
+                    case "LevelAsText":
+                        columns.Add(columnOption.Key, new LevelColumnWriter(true, NpgsqlDbType.Text));
+                        break;
+                    case "Timestamp":
+                        columns.Add(columnOption.Key, new TimestampColumnWriter());
+                        break;
+                    case "LogEvent":
+                        columns.Add(columnOption.Key, new LogEventSerializedColumnWriter());
+                        break;
+                    case "Properties":
+                        columns.Add(columnOption.Key, new PropertiesColumnWriter());
+                        break;
+                    case "Message":
+                        columns.Add(columnOption.Key, new MessageTemplateColumnWriter());
+                        break;
+                    case "RenderedMessage":
+                        columns.Add(columnOption.Key, new RenderedMessageColumnWriter());
+                        break;
+                    case "Exception":
+                        columns.Add(columnOption.Key, new ExceptionColumnWriter());
+                        break;
+                    case "IdAutoIncrement":
+                        columns.Add(columnOption.Key, new IdAutoIncrementColumnWriter());
+                        break;
+                }
+            }
+        }
+
+        PostgreSqlOptions optionsLocal;
+        PeriodicBatchingSinkOptions batchingOptions;
+        PeriodicBatchingSink batchingSink;
+
+        if (loggerPropertyColumnOptions == null)
+        {
+            optionsLocal = GetOptions(
+                connectionString,
+                tableName,
+                columns,
+                period.Value,
+                formatProvider,
+                batchSizeLimit,
+                queueLimit,
+                useCopy,
+                schemaName,
+                needAutoCreateTable,
+                needAutoCreateSchema,
+                failureCallback);
+
+            batchingOptions = new PeriodicBatchingSinkOptions()
+            {
+                BatchSizeLimit = optionsLocal.BatchSizeLimit,
+                Period = optionsLocal.Period,
+                QueueLimit = optionsLocal.QueueLimit
+            };
+
+            batchingSink = new PeriodicBatchingSink(new PostgreSqlSink(optionsLocal), batchingOptions);
+            return sinkConfiguration.Sink(batchingSink, restrictedToMinimumLevel, levelSwitch);
+        }
+
+        columns ??= new Dictionary<string, ColumnWriterBase>();
+
+        foreach (var columnOption in loggerPropertyColumnOptions)
+        {
+            columns.Add(columnOption.Key, columnOption.Value);
+        }
+
+        if (nestedPropertyColumnOptions == null)
+        {
+            optionsLocal = GetOptions(
+                connectionString,
+                tableName,
+                columns,
+                period.Value,
+                formatProvider,
+                batchSizeLimit,
+                queueLimit,
+                useCopy,
+                schemaName,
+                needAutoCreateTable,
+                needAutoCreateSchema,
+                failureCallback);
+
+            batchingOptions = new PeriodicBatchingSinkOptions()
+            {
+                BatchSizeLimit = optionsLocal.BatchSizeLimit,
+                Period = optionsLocal.Period,
+                QueueLimit = optionsLocal.QueueLimit
+            };
+
+            batchingSink = new PeriodicBatchingSink(new PostgreSqlSink(optionsLocal), batchingOptions);
+            return sinkConfiguration.Sink(batchingSink, restrictedToMinimumLevel, levelSwitch);
+        }
+
+        foreach (var columnOption in nestedPropertyColumnOptions)
+        {
+            columns.Add(columnOption.Key,
+                new NestedPropertyColumnWriter(
+                    columnOption.Value.ParentName,
+                    columnOption.Value.NestedName,
+                    columnOption.Value.UseExactNestedPropertyName,
+                    columnOption.Value.WriteMethod,
+                    columnOption.Value.DbType));
+        }
+
+        optionsLocal = GetOptions(
+            connectionString,
+            tableName,
+            columns,
+            period.Value,
+            formatProvider,
+            batchSizeLimit,
+            queueLimit,
+            useCopy,
+            schemaName,
+            needAutoCreateTable,
+            needAutoCreateSchema,
+            failureCallback);
+
+        batchingOptions = new PeriodicBatchingSinkOptions()
+        {
+            BatchSizeLimit = optionsLocal.BatchSizeLimit,
+            Period = optionsLocal.Period,
+            QueueLimit = optionsLocal.QueueLimit
+        };
+
+        batchingSink = new PeriodicBatchingSink(new PostgreSqlSink(optionsLocal), batchingOptions);
+        return sinkConfiguration.Sink(batchingSink, restrictedToMinimumLevel, levelSwitch);
+    }
+
+    /// <summary>
     ///     Adds a sink that writes log events to a table in a PostgreSQL table.
     ///     LoggerAuditSinkConfiguration
     /// </summary>
