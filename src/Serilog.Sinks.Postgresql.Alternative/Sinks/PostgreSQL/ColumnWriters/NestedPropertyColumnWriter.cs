@@ -1,7 +1,5 @@
 namespace Serilog.Sinks.PostgreSQL.ColumnWriters;
 
-using System.Diagnostics.CodeAnalysis;
-
 /// <inheritdoc cref="ColumnWriterBase" />
 /// <summary>
 ///     This class is used to write a nested event property.
@@ -15,6 +13,8 @@ public class NestedPropertyColumnWriter : ColumnWriterBase
     /// </summary>
     public NestedPropertyColumnWriter() : base(NpgsqlDbType.Text, order: 0)
     {
+        this.ParentName = string.Empty;
+        this.NestedName = string.Empty;
     }
 
     /// <inheritdoc cref="ColumnWriterBase" />
@@ -29,6 +29,8 @@ public class NestedPropertyColumnWriter : ColumnWriterBase
     // ReSharper disable once UnusedMember.Global
     public NestedPropertyColumnWriter(int? order = null) : base(NpgsqlDbType.Text, order: order)
     {
+        this.ParentName = string.Empty;
+        this.NestedName = string.Empty;
     }
 
     /// <inheritdoc cref="ColumnWriterBase" />
@@ -46,10 +48,6 @@ public class NestedPropertyColumnWriter : ColumnWriterBase
     /// Is used for sorting the columns as the writers are ordered alphabetically per default.
     /// </param>
     /// <seealso cref="ColumnWriterBase" />
-    [SuppressMessage(
-        "StyleCop.CSharp.NamingRules",
-        "SA1305:FieldNamesMustNotUseHungarianNotation",
-        Justification = "Reviewed. Suppression is OK here.")]
     // ReSharper disable once UnusedMember.Global
     public NestedPropertyColumnWriter(
         string parentPropertyName,
@@ -57,7 +55,7 @@ public class NestedPropertyColumnWriter : ColumnWriterBase
         bool useExactNestedPropertyName,
         PropertyWriteMethod writeMethod = PropertyWriteMethod.ToString,
         NpgsqlDbType dbType = NpgsqlDbType.Text,
-        string format = null,
+        string? format = null,
         int? order = null)
         : base(dbType, order: order)
     {
@@ -72,7 +70,7 @@ public class NestedPropertyColumnWriter : ColumnWriterBase
     ///     Gets or sets the format.
     /// </summary>
     // ReSharper disable once MemberCanBePrivate.Global
-    public string Format { get; set; }
+    public string? Format { get; set; }
 
     /// <summary>
     ///     Gets or sets the parent name.
