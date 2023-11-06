@@ -1,22 +1,26 @@
 // --------------------------------------------------------------------------------------------------------------------
-// <copyright file="BaseTests.cs" company="SeppPenner and the Serilog contributors">
+// <copyright file="DummyEnum.cs" company="SeppPenner and the Serilog contributors">
 // The project is licensed under the MIT license.
 // </copyright>
 // <summary>
-//   This class is used as a base class for the integration tests.
+//   A dummy enum for testing enum as integer writing logic.
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
 namespace Serilog.Sinks.Postgresql.Alternative.IntegrationTests;
 
 /// <summary>
-/// This class is used as a base class for the integration tests.
+/// A dummy enum for testing enum as integer writing logic.
 /// </summary>
-public abstract class BaseTests
+public enum DummyEnum
 {
     /// <summary>
-    ///     The connection string.
+    /// Test 1.
     /// </summary>
-    protected const string ConnectionString =
-        "User ID=postgres;Password=postgres;Host=localhost;Port=5432;Database=Serilog";
+    Test1 = 0,
+
+    /// <summary>
+    /// Test 2.
+    /// </summary>
+    Test2 = 1
 }

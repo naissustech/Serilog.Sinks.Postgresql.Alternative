@@ -1,5 +1,3 @@
-﻿using Serilog.Events;
-
 namespace Serilog.Sinks.PostgreSQL;
 
 /// <summary>

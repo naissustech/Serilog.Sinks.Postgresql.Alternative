@@ -111,6 +111,25 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "ndc",
+      "name": "Endy Tjahjono",
+      "avatar_url": "https://avatars.githubusercontent.com/u/489308?v=4",
+      "profile": "https://github.com/ndc",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "mwlsilva",
+      "name": "mwlsilva",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1103682?v=4",
+      "profile": "https://github.com/mwlsilva",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -118,5 +137,6 @@
   "projectOwner": "serilog-contrib",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "skipCi": true
+  "skipCi": true,
+  "commitConvention": "angular"
 }

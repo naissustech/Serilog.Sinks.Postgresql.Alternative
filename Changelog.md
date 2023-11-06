@@ -1,7 +1,13 @@
 Change history
 --------------
 
-* **Version 4.0.0.0 (2022-11-11)** : Prevent logging except logs with LoggedManually property.
+* **Version 3.5.0.0 (2022-11-20)**: Updated nuget packages, removed support for Net5.0, added support for Net7.0.
+* **Version 3.4.5.0 (2022-10-30)** : Updated nuget packages.
+* **Version 3.4.4.0 (2022-08-31)** : Updated NuGet packages, fixed issue that enum couldn't be written as integer (Check https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/issues/52).
+* **Version 3.4.3.0 (2022-06-01)** : Updated NuGet packages.
+* **Version 3.4.2.0 (2022-04-04)** : Updated NuGet packages.
+* **Version 3.4.1.0 (2022-02-16)** : Updated NuGet packages, added nullable checks, added editorconfig, added file scoped namespaces, added global usings, removed native support for Net Framework (Breaking change).
+* **Version 3.4.0.0 (2022-01-12)** : NuGet packages updated, adjusted timestamps to be written as UTC (Breaking change?).
 * **Version 3.3.12.0 (2021-11-09)** : NuGet packages updated, added support for Net6.0.
 * **Version 3.3.11.0 (2021-10-28)** : Updated nuget packages, fixed bug where configuration from a JSON file was broken (https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/issues/31).
 * **Version 3.3.10.0 (2021-10-14)** : Updated nuget packages, added custom order for table columns.

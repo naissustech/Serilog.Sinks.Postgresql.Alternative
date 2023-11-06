@@ -23,6 +23,9 @@ var logger = new LoggerConfiguration()
 
 The project can be found on [nuget](https://www.nuget.org/packages/Serilog.Sinks.Postgresql.Alternative/).
 
+## Hints
+Since the sink uses PeriodicBatching, which queues the log events and uses a timer to dequeue and finally log the events, you need to call `Log.CloseAndFlush();` sometimes to create the table if it should be auto-created. Check out https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative/issues/50 for an example.
+
 ## Configuration options
 
 |Parameter|Meaning|Example|Default value|
@@ -324,3 +327,53 @@ var columnProps = new Dictionary<string, ColumnWriterBase>
     { "MachineName", new SinglePropertyColumnWriter("MachineName", format: "l", order: 0) }
 };
 ```
+
+## Notes on column writers
+One difference between `Serilog.Sinks.PostgreSQL.ColumnWriters.LogEventSerializedColumnWriter` and `PropertiesColumnWriter` is that `LogEventSerializedColumnWriter` contains metadata while `PropertiesColumnWriter` only contains properties.
+
+Example of `LogEventSerializedColumnWriter`:
+
+```json
+{
+   "Level": "Information",
+   "Timestamp": "2022-03-04T13:42:29.5201398+07:00",
+   "Properties": {
+      "Elapsed": 289.4962,
+      "ActionId": "67d1f404-0ec4-40a2-8ea6-b7cdea75597a",
+      "RequestId": "0HMFTL8J7NNHJ:00000001",
+      "ActionName": "/Index",
+      "StatusCode": 200,
+      "RequestPath": "/",
+      "ConnectionId": "0HMFTL8J7NNHJ",
+      "RequestMethod": "GET",
+      "SourceContext": "Serilog.AspNetCore.RequestLoggingMiddleware"
+   },
+   "Renderings": {
+      "Elapsed": [
+         {
+            "Format": "0.0000",
+            "Rendering": "289.4962"
+         }
+      ]
+   },
+   "MessageTemplate": "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms"
+}
+```
+
+And `PropertiesColumnWriter` for the same event:
+
+```json
+{
+   "Elapsed": 289.4962,
+   "ActionId": "67d1f404-0ec4-40a2-8ea6-b7cdea75597a",
+   "RequestId": "0HMFTL8J7NNHJ:00000001",
+   "ActionName": "/Index",
+   "StatusCode": 200,
+   "RequestPath": "/",
+   "ConnectionId": "0HMFTL8J7NNHJ",
+   "RequestMethod": "GET",
+   "SourceContext": "Serilog.AspNetCore.RequestLoggingMiddleware"
+}
+```
+
+If there is an exception, `LogEventSerializedColumnWriter` will have a property called `Exception` containing the stack trace, the same stack trace inside `ExceptionColumnWriter`.

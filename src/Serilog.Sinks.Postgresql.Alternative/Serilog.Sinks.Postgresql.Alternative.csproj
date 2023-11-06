@@ -1,42 +1,42 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net462;net47;net472;net48;netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
     <AssemblyName>Serilog.Sinks.Postgresql.Alternative</AssemblyName>
     <RootNamespace>Serilog</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageId>Serilog.Sinks.Postgresql.Alternative.Naissus</PackageId>
-    <Authors>Naissus Tech, SeppPenner and the Serilog contributors</Authors>
-    <Company>Naissus Tech, SeppPenner and the Serilog contributors</Company>
-    <Copyright>Copyright © Naissus Tech, SeppPenner and the Serilog contributors</Copyright>
-    <Description>Serilog.Sinks.Postgresql.Alternative.Naissus is a library to save logging information from https://github.com/serilog/serilog to https://www.postgresql.org/ and adapted to allow nested properties logging.</Description>
-    <PackageTags>c# csharp serilog postgresql postgres sink logging log naissus</PackageTags>
+    <PackageId>Serilog.Sinks.Postgresql.Alternative</PackageId>
+    <Authors>SeppPenner and the Serilog contributors</Authors>
+    <Company>SeppPenner and the Serilog contributors</Company>
+    <Copyright>Copyright © SeppPenner and the Serilog contributors</Copyright>
+    <Description>Serilog.Sinks.Postgresql.Alternative is a library to save logging information from https://github.com/serilog/serilog to https://www.postgresql.org/.</Description>
+    <PackageTags>c# csharp serilog postgresql postgres sink logging log</PackageTags>
     <PackageProjectUrl>https://www.nuget.org/packages/Serilog.Sinks.Postgresql.Alternative/</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/naissustech/Serilog.Sinks.Postgresql.Alternative</RepositoryUrl>
+    <RepositoryUrl>https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative</RepositoryUrl>
     <PackageIcon>Icon.png</PackageIcon>
     <RepositoryType>Github</RepositoryType>
-    <PackageReleaseNotes>Version 4.0.2.0 (2022-12-15): Prevent logging except logs with LoggedManually property.</PackageReleaseNotes>
+    <PackageReleaseNotes>Version 3.5.0.0 (2022-11-20): Updated nuget packages, removed support for Net5.0, added support for Net7.0.</PackageReleaseNotes>
     <PackageLicenseFile>License.txt</PackageLicenseFile>
     <LangVersion>latest</LangVersion>
+	<Nullable>enable</Nullable>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>4.0.2</Version>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersion.MsBuild" Version="5.7.0">
+    <PackageReference Include="GitVersion.MsBuild" Version="5.11.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
-    <PackageReference Include="Npgsql" Version="5.0.10" />
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="2.3.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
+    <PackageReference Include="Npgsql" Version="7.0.0" />
+    <PackageReference Include="Serilog" Version="2.12.0" />
+    <PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="3.1.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,7 +50,7 @@
     </None>
     <None Include="..\..\README.md">
       <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
+      <PackagePath></PackagePath>
     </None>
     <None Include="..\..\Changelog.md">
       <Pack>True</Pack>
