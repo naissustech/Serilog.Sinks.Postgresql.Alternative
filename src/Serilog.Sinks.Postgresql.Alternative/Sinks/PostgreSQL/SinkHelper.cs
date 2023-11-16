@@ -10,6 +10,8 @@
 namespace Serilog.Sinks.PostgreSQL;
 
 using Serilog.Parsing;
+using System;
+using System.Diagnostics;
 
 /// <summary>
 /// The sink helper class to not duplicate the code in the audit sink.
@@ -48,20 +50,20 @@ public class SinkHelper
     /// <param name="events">The events.</param>
     public async Task Emit(IEnumerable<LogEvent> events)
     {
-        var filteredEvents = FilterLogEvents(events);
+        var filteredEvents = this.FilterLogEvents(events);
         if (!filteredEvents.Any())
         {
             return;
         }
 
-        filteredEvents = GenerateAndMergeManualLogs(filteredEvents);
+        filteredEvents = this.GenerateAndMergeManualLogs(filteredEvents);
 
         if (!filteredEvents.Any())
         {
             return;
         }
 
-        using var connection = new NpgsqlConnection(this.SinkOptions.ConnectionString);
+        await using var connection = new NpgsqlConnection(this.SinkOptions.ConnectionString);
         connection.Open();
 
         if (this.SinkOptions.NeedAutoCreateSchema && !this.isSchemaCreated && !string.IsNullOrWhiteSpace(this.SinkOptions.SchemaName))
@@ -106,6 +108,36 @@ public class SinkHelper
         return filteredEvents;
     }
 
+    //private List<LogEvent> GenerateSpanIdsForErrorLogs(List<LogEvent> events)
+    //{
+    //    var differentRequestIds = events
+    //        .Where(e => e.Level >= LogEventLevel.Error)
+    //        .SelectMany(x => x.Properties.Where(p => p.Key == "RequestId").Select(p => p.Value.ToString()))
+    //        .Distinct()
+    //        .ToList();
+
+    //    foreach (var requestId in differentRequestIds)
+    //    {
+    //        var eventsWithSameRequestId = events
+    //            .Where(x => x.Properties.Any(p => p.Key == "RequestId" && p.Value.ToString() == requestId))
+    //            .ToList();
+
+    //        var foundSpanId = Activity.Current?.SpanId;
+    //        if (foundSpanId != null)
+    //        {
+    //            _spanId = foundSpanId.Value;
+    //            return;
+    //        }
+
+    //        _spanId = activitySpanId ?? new ActivitySpanId();
+
+    //        foreach (var logEvent in eventsWithSameRequestId)
+    //        {
+                
+    //        }
+    //    }
+    //}
+
     private List<LogEvent> GenerateAndMergeManualLogs(List<LogEvent> events)
     {
         var differentSpanIds = events
@@ -144,10 +176,10 @@ public class SinkHelper
             string? accountUid = null;
             string? clientUid = null;
             string? whitelabelUid = null;
-            string? commandNameString;
             string? additionalMessage = null;
             DateTimeOffset timestamp = eventsWithSameSpanId.First().Timestamp;
             Exception? exception = null;
+            LogEventPropertyValue? commandName;
             LogEventPropertyValue? userUid;
             LogEventPropertyValue? requestPath;
             LogEventLevel level = eventsWithSameSpanId.Max(x => x.Level);
@@ -155,21 +187,11 @@ public class SinkHelper
 
             var isError = level >= LogEventLevel.Error;
 
-            userUid = automaticLogs.Find(x => x.Properties.ContainsKey("UserId"))?.Properties.First(p => p.Key == "UserId").Value;
+            userUid = eventsWithSameSpanId.Find(x => x.Properties.ContainsKey("UserId"))?.Properties.First(p => p.Key == "UserId").Value;
 
-            requestPath = automaticLogs.Find(x => x.Properties.ContainsKey("RequestPath"))?.Properties.First(p => p.Key == "RequestPath").Value;
+            requestPath = eventsWithSameSpanId.Find(x => x.Properties.ContainsKey("RequestPath"))?.Properties.First(p => p.Key == "RequestPath").Value;
 
-            commandNameString = automaticLogs.SelectMany(x => x.Properties.Where(p => p.Key == "Name" && p.Value != null).Select(y => y.Value))
-                .Select(x => x?.ToString().Replace("\"", string.Empty))
-                .FirstOrDefault(x => !string.IsNullOrEmpty(x) && x != "EventCommand");
-
-            if (string.IsNullOrEmpty(commandNameString))
-            {
-                commandNameString = eventsWithSameSpanId
-                    .SelectMany(x => x.Properties.Where(p => p.Key == "Name" && p.Value != null).Select(y => y.Value))
-                    .Select(x => x?.ToString().Replace("\"", string.Empty))
-                    .FirstOrDefault(x => !string.IsNullOrEmpty(x) && x != "EventCommand");
-            }
+            commandName = eventsWithSameSpanId.Find(x => x.Properties.ContainsKey("CommandName"))?.Properties.First(p => p.Key == "CommandName").Value;
 
             if (isError)
             {
@@ -286,12 +308,6 @@ public class SinkHelper
                     new("LoggedManually", new ScalarValue(true)),
                 };
 
-            if (!string.IsNullOrEmpty(commandNameString))
-            {
-                newProperties.Add(new LogEventProperty("Name", new ScalarValue(commandNameString)));
-                newProperties.Add(new LogEventProperty("CommandName", new ScalarValue(commandNameString)));
-            }
-
             if (actionName != null)
             {
                 newProperties.Add(new LogEventProperty("ActionName", actionName));
@@ -359,6 +375,20 @@ public class SinkHelper
                 if (requestProperties.TryGetValue("UserId", out var userUidString))
                 {
                     newProperties.Add(new LogEventProperty("UserId", new ScalarValue(userUidString)));
+                }
+            }
+
+            if (commandName != null)
+            {
+                newProperties.Add(new LogEventProperty("Name", commandName));
+                newProperties.Add(new LogEventProperty("CommandName", commandName));
+            }
+            else
+            {
+                if (requestProperties.TryGetValue("CommandName", out var commandNameString))
+                {
+                    newProperties.Add(new LogEventProperty("Name", new ScalarValue(commandNameString)));
+                    newProperties.Add(new LogEventProperty("CommandName", new ScalarValue(commandNameString)));
                 }
             }
 
