@@ -6,7 +6,7 @@
     <RootNamespace>Serilog</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageId>Serilog.Sinks.Postgresql.Alternative</PackageId>
+    <PackageId>Serilog.Sinks.Postgresql.Alternative.Naissus</PackageId>
     <Authors>SeppPenner and the Serilog contributors</Authors>
     <Company>SeppPenner and the Serilog contributors</Company>
     <Copyright>Copyright © SeppPenner and the Serilog contributors</Copyright>
@@ -25,6 +25,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version>4.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
