@@ -348,9 +348,33 @@ public class SinkHelper
             }
             else
             {
-                if (requestProperties.TryGetValue("ClientUid", out clientUid))
+                var clientUidProp =
+                    manualLogs.Find(x => x.Properties.ContainsKey("ClientUid"))?.Properties.First(p => p.Key == "ClientUid").Value;
+
+                clientUidProp ??= eventsWithSameSpanId.Find(x => x.Properties.ContainsKey("ClientUid"))?.Properties.First(p => p.Key == "ClientUid").Value;
+
+                if (clientUidProp != null)
                 {
-                    newProperties.Add(new LogEventProperty("ClientUid", new ScalarValue(clientUid)));
+                    newProperties.Add(new LogEventProperty("ClientUid", clientUidProp));
+                }
+                else
+                {
+                    clientUid = clientUidProp?.ToString();
+
+                    if (string.IsNullOrEmpty(clientUid))
+                    {
+                        requestProperties.TryGetValue("ClientUid", out clientUid);
+                    }
+
+                    if (!string.IsNullOrEmpty(clientUid))
+                    {
+                        newProperties.Add(new LogEventProperty("ClientUid", new ScalarValue(clientUid)));
+                    }
+
+                    if (requestProperties.TryGetValue("ClientUid", out clientUid))
+                    {
+                        newProperties.Add(new LogEventProperty("ClientUid", new ScalarValue(clientUid)));
+                    }
                 }
             }
 
@@ -360,9 +384,34 @@ public class SinkHelper
             }
             else
             {
-                if (requestProperties.TryGetValue("AccountUid", out accountUid))
+                var accountUidProp =
+                    manualLogs.Find(x => x.Properties.ContainsKey("AccountUid"))?.Properties.First(p => p.Key == "AccountUid").Value;
+
+                accountUidProp ??= eventsWithSameSpanId.Find(x => x.Properties.ContainsKey("AccountUid"))?.Properties
+                    .First(p => p.Key == "AccountUid").Value;
+
+                if (accountUidProp != null)
                 {
-                    newProperties.Add(new LogEventProperty("AccountUid", new ScalarValue(accountUid)));
+                    newProperties.Add(new LogEventProperty("AccountUid", accountUidProp));
+                }
+                else
+                {
+                    accountUid = accountUidProp?.ToString();
+
+                    if (string.IsNullOrEmpty(accountUid))
+                    {
+                        requestProperties.TryGetValue("AccountUid", out accountUid);
+                    }
+
+                    if (!string.IsNullOrEmpty(accountUid))
+                    {
+                        newProperties.Add(new LogEventProperty("AccountUid", new ScalarValue(accountUid)));
+                    }
+
+                    if (requestProperties.TryGetValue("AccountUid", out accountUid))
+                    {
+                        newProperties.Add(new LogEventProperty("AccountUid", new ScalarValue(accountUid)));
+                    }
                 }
             }
 
