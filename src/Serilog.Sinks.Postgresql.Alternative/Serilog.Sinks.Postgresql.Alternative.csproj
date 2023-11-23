@@ -2,21 +2,21 @@
 
   <PropertyGroup>
       <TargetFrameworks>net6.0</TargetFrameworks>
-    <AssemblyName>Serilog.Sinks.Postgresql.Alternative</AssemblyName>
+    <AssemblyName>Serilog.Sinks.Postgresql.Alternative.Naissus</AssemblyName>
     <RootNamespace>Serilog</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageId>Serilog.Sinks.Postgresql.Alternative.Naissus</PackageId>
-    <Authors>SeppPenner and the Serilog contributors</Authors>
-    <Company>SeppPenner and the Serilog contributors</Company>
-    <Copyright>Copyright © SeppPenner and the Serilog contributors</Copyright>
-    <Description>Serilog.Sinks.Postgresql.Alternative is a library to save logging information from https://github.com/serilog/serilog to https://www.postgresql.org/.</Description>
+    <Authors>Naissus Technologies, SeppPenner and the Serilog contributors</Authors>
+    <Company>Naissus Technologies, SeppPenner and the Serilog contributors</Company>
+    <Copyright>Copyright © Naissus Technologies, SeppPenner and the Serilog contributors</Copyright>
+    <Description>Serilog.Sinks.Postgresql.Alternative.Naissus is a library to save logging information from https://github.com/serilog/serilog to https://www.postgresql.org/.</Description>
     <PackageTags>c# csharp serilog postgresql postgres sink logging log</PackageTags>
-    <PackageProjectUrl>https://www.nuget.org/packages/Serilog.Sinks.Postgresql.Alternative/</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/serilog-contrib/Serilog.Sinks.Postgresql.Alternative</RepositoryUrl>
+    <PackageProjectUrl>https://www.nuget.org/packages/Serilog.Sinks.Postgresql.Naissus/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/naissustech/Serilog.Sinks.Postgresql.Alternative</RepositoryUrl>
     <PackageIcon>Icon.png</PackageIcon>
     <RepositoryType>Github</RepositoryType>
-    <PackageReleaseNotes>Version 3.5.0.0 (2022-11-20): Updated nuget packages, removed support for Net5.0, added support for Net7.0.</PackageReleaseNotes>
+    <PackageReleaseNotes>Version 4.1.0.0 (2023-11-23): Updated nuget packages, removed support for Net5.0, added support for Net7.0. Customized for Naissus Logs.</PackageReleaseNotes>
     <PackageLicenseFile>License.txt</PackageLicenseFile>
     <LangVersion>latest</LangVersion>
 	<Nullable>enable</Nullable>
@@ -25,6 +25,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Product>Serilog.Sinks.Postgresql.Alternative.Naissus</Product>
     <Version>4.1.0</Version>
   </PropertyGroup>
 
